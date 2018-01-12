@@ -46,7 +46,7 @@ void ICACHE_FLASH_ATTR led_off(void *arg) {
 void ICACHE_FLASH_ATTR led_on(void *arg) {
   (void)arg;
   // LED is sunk, so it has to be opposite the actual GPIO
-  gpio_output_set(LED, GPIO, 0, 0);
+  gpio_output_set(GPIO, LED, 0, 0);
   os_timer_arm(&off_timer, LEDON, 1);
 }
 
@@ -60,7 +60,6 @@ void ICACHE_FLASH_ATTR user_init()
   PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
   // set, clear, enable, disable (32 bit args)
   gpio_output_set(0, 0, LED | GPIO, 0);
-  gpio_output_set(LED | GPIO, 0, 0, 0);
 
   // setup timers
   os_timer_setfn(&on_timer, (os_timer_func_t *)led_on, NULL);
