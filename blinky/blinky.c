@@ -3,7 +3,6 @@
 #include "gpio.h"
 #include "os_type.h"
 
-
 /*
 PIN_FUNC_SELECT(<COL_1>, FUNC_<COL_0>);
 GPIO0:  PERIPHS_IO_MUX_GPIO0_U
@@ -24,57 +23,47 @@ GPIO14: PERIPHS_IO_MUX_MTMS_U
 GPIO15: PERIPHS_IO_MUX_MTDO_U
 */
 
-// pin the LED is on
-#define GPIO BIT5
+// LED pin. Do not change, the pin is hardcoded in user_init()
+#define LED BIT5
+
+// Extra GPIO pin. Do not change, the pin is hardcoded in user_init()
+#define GPIO BIT0
 
 // the LED is on for 50ms every 250ms
-#define LEDPER 250
-#define LEDON 50
+#define LEDPER 4000
+#define LEDON 2000
 
-// ESP-12 modules have LED on GPIO2. Change to another GPIO
-// for other boards.
 static volatile os_timer_t on_timer;
 static volatile os_timer_t off_timer;
 
 void ICACHE_FLASH_ATTR led_off(void *arg) {
   (void)arg;
-  gpio_output_set(GPIO, 0, 0, 0);
+  // LED is sunk, so it has to be opposite the actual GPIO
+  gpio_output_set(LED, GPIO, 0, 0);
   os_timer_disarm(&off_timer);
 }
 
 void ICACHE_FLASH_ATTR led_on(void *arg) {
   (void)arg;
-  gpio_output_set(0, GPIO, 0, 0);
+  // LED is sunk, so it has to be opposite the actual GPIO
+  gpio_output_set(LED, GPIO, 0, 0);
   os_timer_arm(&off_timer, LEDON, 1);
 }
-
-/*
-os_event_t    user_procTaskQueue[1];
-void ICACHE_FLASH_ATTR loop(os_event_t *events) {
-  gpio_output_set(0,GPIO,0,0);
-  os_delay_us(50000);
-  gpio_output_set(GPIO,0,0,0);
-  os_delay_us(200000);
-  system_os_post(0, 0, 0 );
-}
-*/
 
 void ICACHE_FLASH_ATTR user_init()
 {
   // init gpio subsytem
   gpio_init();
 
-  // config GPIO5 to actually be a GPIO and enable output
+  // config GPIO5 (internal LED) to actually be a GPIO and enable output
   PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
-  gpio_output_set(0, 0, GPIO, 0);
-  gpio_output_set(GPIO, 0, 0, 0);
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
+  // set, clear, enable, disable (32 bit args)
+  gpio_output_set(0, 0, LED | GPIO, 0);
+  gpio_output_set(LED | GPIO, 0, 0, 0);
 
   // setup timers
   os_timer_setfn(&on_timer, (os_timer_func_t *)led_on, NULL);
   os_timer_setfn(&off_timer, (os_timer_func_t *)led_off, NULL);
   os_timer_arm(&on_timer, LEDPER, 1);
-
-  //system_os_task(loop, 0, user_procTaskQueue, 1);
-
-  //system_os_post(0, 0, 0 );
 }
