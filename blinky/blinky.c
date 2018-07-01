@@ -30,8 +30,8 @@ GPIO15: PERIPHS_IO_MUX_MTDO_U
 #define GPIO BIT0
 
 // the LED is on for 50ms every 250ms
-#define LEDPER 4000
-#define LEDON 2000
+#define LEDPER 250
+#define LEDON 50
 
 static volatile os_timer_t on_timer;
 static volatile os_timer_t off_timer;
