@@ -81,7 +81,6 @@ void ICACHE_FLASH_ATTR user_init() {
   PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
   gpio_output_set(0, 0, GPIO, 0);
   gpio_output_set(GPIO, 0, 0, 0);
-  wifi_station_connect();
   last_wifi_status = wifi_station_get_connect_status();
 
   // set up led timers and wifi status polling
@@ -94,13 +93,14 @@ void ICACHE_FLASH_ATTR user_init() {
   led_on(0);
 
   // wifi credentials
-  const char ssid[32] = "ssid";
-  const char password[32] = "password";
+  const char ssid[32] = "Littlefish_2.4GHz";
+  const char password[32] = "JrpLmpNbpArp360";
   struct station_config stationConf;
 
   // actually connect to wifi
   wifi_set_opmode( STATION_MODE );
   os_memcpy(&stationConf.ssid, ssid, 32);
   os_memcpy(&stationConf.password, password, 32);
+  // since this is called in user_init, we don't need to call `wifi_station_connect()`
   wifi_station_set_config(&stationConf);
 }

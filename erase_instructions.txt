@@ -1,0 +1,6 @@
+* write '0xff' to all sectors of flash - you can manually flash 0xff to all sectors, or just use
+  'esptool.py erase_flash'
+* re-flash firmware according to
+  https://www.espressif.com/en/support/explore/get-started/esp8266/getting-started-guide. I only
+  flash blank.bin and esp_init_data_default.bin. Not sure if that's kosher, but it works! Find
+  everything in your sdk folder (/ESP8266_NONOS_SDK_V2.0.0_16_08_10/bin).
