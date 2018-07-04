@@ -5,7 +5,7 @@
 #include "os_type.h"
 // wifi stuff
 #include "user_interface.h"
-// UDP stuff
+// tcp stuff
 #include "espconn.h"
 // zalloc
 #include "mem.h"
@@ -21,7 +21,54 @@
 #define IP_POLL_DELAY 100
 os_timer_t ip_poll_timer;
 
+// connection storage
+struct espconn connection;
+struct _esp_tcp tcp_info;
+ip_addr_t tcp_server_ip;
+
+// what to connect to
+#define REMOTE_HOST "example.com"
+
+void ICACHE_FLASH_ATTR connect_to_server() {
+  os_printf("Connected to server...");
+  return;
+}
+
+void ICACHE_FLASH_ATTR dns_found( const char* name, ip_addr_t* ipaddr, void* arg) {
+  // make sure we got something before we start doing work...
+  if( ipaddr == NULL ) {
+    os_printf("DNS query returned no results!\n");
+    return;
+  }
+
+  struct espconn* func_espconn = (struct espconn*)arg;
+
+  os_printf(  "DNS query returned %d.%d.%d.%d\n",
+              *((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1),
+              *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
+
+  // copy in the found ip address and set up other network parameters
+  tcp_server_ip.addr = ipaddr->addr;
+  os_memcpy(func_espconn->proto.tcp->remote_ip, &ipaddr->addr, 4);
+  func_espconn->proto.tcp->remote_port = 80;
+  func_espconn->proto.tcp->local_port = espconn_port();
+
+  // callbacks!
+  espconn_regist_connectcb(func_espconn, connect_to_server);
+  espconn_connect(func_espconn);
+
+  return;
+}
+
 void ICACHE_FLASH_ATTR tcp_init() {
+  os_printf("initializing tcp connection...\n");
+  connection.proto.tcp = &tcp_info;
+  connection.type = ESPCONN_TCP;
+  connection.state = ESPCONN_NONE;
+  
+  os_printf("kicking off DNS search...\n");
+  tcp_server_ip.addr = 0;
+  espconn_gethostbyname(&connection, REMOTE_HOST, &tcp_server_ip, dns_found);
   return;
 }
 
@@ -43,7 +90,6 @@ void ICACHE_FLASH_ATTR user_init() {
 
   // init uart console
   uart_div_modify(0, UART_CLK_FREQ / 115200);
-  //uart_init(BIT_RATE_115200, BIT_RATE_115200);
   os_printf("\n\nUART debug interface enabled at 115200 bps\n\n");
 
   // init gpio subsytem

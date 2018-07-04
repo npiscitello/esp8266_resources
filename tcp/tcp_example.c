@@ -2,6 +2,7 @@
 #include "mem.h"
 #include "os_type.h"
 #include "user_interface.h"
+#include "c_types.h"
   
 #define NET_DOMAIN "cn.bing.com"
 #define pheadbuffer "GET / HTTP/1.1\r\nUser-Agent: curl/7.37.0\r\nHost: %s\r\nAccept: */*\r\n\r\n"
@@ -85,7 +86,6 @@ void ICACHE_FLASH_ATTR user_tcp_recon_cb(void *arg, sint8 err) {
   os_printf("Reconnect callback called, error code: %d !!! \r\n",err);
 }
 
-#ifdef DNS_ENABLE
 /******************************************************************************
  * FunctionName : user_dns_found
  * Description  : dns found callback
@@ -137,7 +137,6 @@ void ICACHE_FLASH_ATTR user_dns_check_cb(void *arg) {
   espconn_gethostbyname(pespconn, NET_DOMAIN, &tcp_server_ip, user_dns_found); // recall DNS function
   os_timer_arm(&test_timer, 1000, 0);
 }
-#endif
 
 /******************************************************************************
  * FunctionName : user_check_ip
@@ -160,26 +159,10 @@ void ICACHE_FLASH_ATTR user_check_ip(void) {
     user_tcp_conn.type = ESPCONN_TCP;
     user_tcp_conn.state = ESPCONN_NONE;
 
-#ifdef DNS_ENABLE
     tcp_server_ip.addr = 0;
     espconn_gethostbyname(&user_tcp_conn, NET_DOMAIN, &tcp_server_ip, user_dns_found); // DNS function
     os_timer_setfn(&test_timer, (os_timer_func_t *)user_dns_check_cb, &user_tcp_conn);
     os_timer_arm(&test_timer, 1000, 0);
-#else
-
-    const char esp_tcp_server_ip[4] = {X, X, X, X}; // remote IP of TCP server
-
-    os_memcpy(user_tcp_conn.proto.tcp->remote_ip, esp_tcp_server_ip, 4);
-
-    user_tcp_conn.proto.tcp->remote_port = XXXX;  // remote port
-    
-    user_tcp_conn.proto.tcp->local_port = espconn_port(); //local port of ESP8266
-
-    espconn_regist_connectcb(&user_tcp_conn, user_tcp_connect_cb); // register connect callback
-    espconn_regist_reconcb(&user_tcp_conn, user_tcp_recon_cb); // register reconnect callback as error handler
-    espconn_connect(&user_tcp_conn); 
-
-#endif
   } else {
     if (  (wifi_station_get_connect_status() == STATION_WRONG_PASSWORD ||
           wifi_station_get_connect_status() == STATION_NO_AP_FOUND ||
@@ -201,8 +184,8 @@ void ICACHE_FLASH_ATTR user_check_ip(void) {
 *******************************************************************************/
 void ICACHE_FLASH_ATTR user_set_station_config(void) {
   // Wifi configuration 
-  char ssid[32] = SSID; 
-  char password[64] = PASSWORD; 
+  char ssid[32] = "ssid"; 
+  char password[64] = "password"; 
   struct station_config stationConf; 
 
   os_memset(stationConf.ssid, 0, 32);
@@ -230,6 +213,7 @@ void ICACHE_FLASH_ATTR user_set_station_config(void) {
 *******************************************************************************/
 void user_init(void)
 {
+  uart_div_modify(0, UART_CLK_FREQ / 115200);
   os_printf("SDK version:%s\n", system_get_sdk_version());
   //Set softAP + station mode 
   wifi_set_opmode(STATIONAP_MODE); 

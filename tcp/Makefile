@@ -1,5 +1,8 @@
 CC = xtensa-lx106-elf-gcc
-CFLAGS = -I. -mlongcalls
+CFLAGS = -I. \
+				 -I/home/npiscitello/custom_build/esp-open-sdk/ESP8266_NONOS_SDK-2.1.0-18-g61248df/include \
+				 -I/home/npiscitello/custom_build/esp-open-sdk/ESP8266_NONOS_SDK-2.1.0-18-g61248df/driver_lib/include/ \
+				 -mlongcalls
 LDLIBS = -nostdlib -Wl,--start-group -lmain -lnet80211 -lwpa -llwip -lpp -lphy -lc -Wl,--end-group -lgcc -ldriver
 LDFLAGS = -Teagle.app.v6.ld
 
