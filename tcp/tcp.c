@@ -17,48 +17,34 @@
 // pin the LED is on
 #define GPIO BIT5
 
-// START UART TEST BLOCK
-static volatile os_timer_t uart_timer;
+// ip poll timer
+#define IP_POLL_DELAY 100
+os_timer_t ip_poll_timer;
 
-void ICACHE_FLASH_ATTR uart(void *arg) {
-  os_printf("test\n");
+void ICACHE_FLASH_ATTR tcp_init() {
+  return;
+}
+
+void ICACHE_FLASH_ATTR ip_poll(void) {
+  struct ip_info ip;
+  os_timer_disarm(&ip_poll_timer);
+
+  if( wifi_station_get_connect_status() == STATION_GOT_IP ) {
+    os_printf("IP address assigned\n");
+    tcp_init();
+  } else {
+    os_timer_arm(&ip_poll_timer, IP_POLL_DELAY, 0);
+  }
+
   return;
 }
 
 void ICACHE_FLASH_ATTR user_init() {
-  uart_init(BIT_RATE_115200, BIT_RATE_115200);
-  os_timer_setfn(&uart_timer, (os_timer_func_t *)uart, NULL);
-  os_timer_arm(&uart_timer, 1000, 1);
-  return;
-}
 
-// END UART TEST BLOCK
-
-/*
-void ICACHE_FLASH_ATTR usr_udp_recv(void *arg, char *data, unsigned short length) {
-  // get and store the station IP
-  //struct ip_info ip_addr;
-  //wifi_get_ip_info(STATION_IF, &ip_addr);
-  return;
-}
-
-void ICACHE_FLASH_ATTR udp_init() {
-  // we want UDP
-  udp_listener.type = ESPCONN_UDP;
-  // allocate space as a UDP listener (.proto is a pointer to a UDP or TCP struct)
-  udp_listener.proto.udp = (esp_udp *)os_zalloc(sizeof(esp_udp));
-  // fill in the UDP listening data
-  udp_listener.proto.udp->local_port = UDP_PORT;
-  udp_listener.proto.udp->remote_port = UDP_PORT;
-  // register the callback for recieved UDP packets
-  espconn_regist_recvcb(&udp_listener, usr_udp_recv);
-  // start listening
-  espconn_create(&udp_listener);
-  return;
-}
-
-
-void ICACHE_FLASH_ATTR user_init() {
+  // init uart console
+  uart_div_modify(0, UART_CLK_FREQ / 115200);
+  //uart_init(BIT_RATE_115200, BIT_RATE_115200);
+  os_printf("\n\nUART debug interface enabled at 115200 bps\n\n");
 
   // init gpio subsytem
   gpio_init();
@@ -79,8 +65,9 @@ void ICACHE_FLASH_ATTR user_init() {
   os_memcpy(&stationConf.password, password, 32);
   wifi_station_set_config(&stationConf);
 
-  // initialize TCP connection
-  tcp_init();
+  // check when the board gets an IP address
+  os_timer_setfn(&ip_poll_timer, (os_timer_func_t *)ip_poll, NULL);
+  os_timer_arm(&ip_poll_timer, IP_POLL_DELAY, 0);
+
   return;
 }
-*/
